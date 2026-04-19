@@ -1,0 +1,16 @@
+# --- Web API ---
+fastapi>=0.115.0,<1
+uvicorn[standard]>=0.30.0,<1
+
+# --- Data / validation (FastAPI pulls Pydantic; listed explicitly for clarity) ---
+SQLAlchemy>=2.0.0,<3
+pydantic>=2.0.0,<3
+# Postgres on Railway (DATABASE_URL); unused when using SQLite locally
+psycopg[binary]>=3.2.0,<4
+
+# --- Google Agent / CX-style client (app/agent_client.py) ---
+google-cloud-ces>=0.4.0
+google-auth>=2.29.0,<3
+
+# --- Local dev: load GEMINI_* / GOOGLE_* from a .env file (optional; not imported in code yet) ---
+python-dotenv>=1.0.0,<2
