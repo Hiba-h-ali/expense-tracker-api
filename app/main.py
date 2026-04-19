@@ -10,11 +10,36 @@ from app.schemas.category import CategoryOutput, CreateCategoryInput  # Category
 from app.schemas.expense import InsertExpenseInput, ExpenseOutput  # Expense request/response models
 from app.schemas.user import CreateUserInput, UserOutput  # User registration request/response models
 from app.services import category_service, expense_service, user_service  # Business logic kept out of route handlers
+from contextlib import asynccontextmanager
+from agent_client import CESClient
+from config import CESConfig
+from pydantic import BaseModel
+from typing import List
+import uuid
 
-app = FastAPI()  # ASGI application instance used by uvicorn
+ces_client: CESClient
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global ces_client
+    config = CESConfig.from_env()
+    ces_client = CESClient(config)
+    yield
+
+
+app = FastAPI(lifespan=lifespan)  # ASGI application instance used by uvicorn
 
 Base.metadata.create_all(bind=engine)  # Create missing tables (SQLite) on startup; does not migrate columns
 
+class ChatRequest(BaseModel):
+    text: str
+    session_id: str | None = None
+
+
+class ChatResponse(BaseModel):
+    messages: List[str]
+    session_id: str
 
 @app.get("/")
 def root():
@@ -64,3 +89,10 @@ def insert_expense(
 ) -> ExpenseOutput:
     """Create an expense; body must include user_id plus expense fields."""
     return expense_service.insert_expense(db, input)
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest):
+    """Handle a chat request."""
+    session_id = request.session_id or str(uuid.uuid4())
+    response = ces_client.run_session_text(request.text, session_id)
+    return ChatResponse(messages=ces_client.extract_response_text(response), session_id=session_id)
