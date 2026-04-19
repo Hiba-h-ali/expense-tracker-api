@@ -11,7 +11,7 @@ from app.schemas.expense import InsertExpenseInput, ExpenseOutput  # Expense req
 from app.schemas.user import CreateUserInput, UserOutput  # User registration request/response models
 from app.services import category_service, expense_service, user_service  # Business logic kept out of route handlers
 from contextlib import asynccontextmanager
-from agent_client import CESClient
+from app.agent_client import CESClient
 from config import CESConfig
 from pydantic import BaseModel
 from typing import List
