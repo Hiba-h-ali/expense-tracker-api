@@ -24,7 +24,7 @@ from app.models.expense import Expense
 from app.models.user import User
 from app.schemas.auth import LoginInput, MeOutput, RefreshInput, TokenPair
 from app.schemas.category import CategoryOutput, CreateCategoryInput
-from app.schemas.expense import ExpenseOutput, InsertExpenseInput
+from app.schemas.expense import ExpenseOutput, InsertExpenseInput, UpdateExpenseInput
 from app.schemas.user import CreateUserInput, UserOutput
 from app.services import auth_service, category_service, expense_service, user_service
 from config import AuthConfig, CESConfig
@@ -136,6 +136,16 @@ def insert_expense(
     current_user: User = Depends(get_current_user),
 ) -> ExpenseOutput:
     return expense_service.insert_expense(db, input, current_user.id)
+
+
+@app.put("/expenses/{expense_id}", response_model=ExpenseOutput)
+def update_expense(
+    expense_id: int,
+    input: UpdateExpenseInput,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ExpenseOutput:
+    return expense_service.update_expense(db, expense_id, input, current_user.id)
 
 
 @app.post("/chat", response_model=ChatResponse)

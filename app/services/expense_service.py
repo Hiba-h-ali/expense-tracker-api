@@ -8,7 +8,11 @@ from sqlalchemy.orm import Session  # DB session from get_db dependency
 from app.services import ai_service
 from app.models.category import Category  # Looked up to ensure category_id is valid
 from app.models.expense import Expense  # ORM model for expenses table
-from app.schemas.expense import InsertExpenseInput, ExpenseOutput  # API input/output models
+from app.schemas.expense import (
+    InsertExpenseInput,
+    ExpenseOutput,
+    UpdateExpenseInput,
+)  # API input/output models
 
 
 def _expense_to_output(expense: Expense) -> ExpenseOutput:
@@ -88,3 +92,44 @@ def insert_expense(db: Session, input: InsertExpenseInput, user_id: int) -> Expe
     db.commit()  # Persist to SQLite
     db.refresh(expense)  # Fill in DB defaults and generated id on the Python object
     return _expense_to_output(expense)  # Respond with the saved row (including id, timestamps)
+
+
+def update_expense(
+    db: Session,
+    expense_id: int,
+    input: UpdateExpenseInput,
+    user_id: int,
+) -> ExpenseOutput:
+    expense = db.get(Expense, expense_id)
+    if expense is None or cast(int, expense.user_id) != user_id:
+        raise HTTPException(status_code=404, detail="Expense not found")
+
+    if input.amount is not None:
+        expense.amount = input.amount
+    if input.description is not None:
+        expense.description = input.description
+    if input.date is not None:
+        expense.date = input.date
+
+    # If category_id provided, validate it. If null/omitted, infer from description.
+    if input.category_id is not None:
+        category = db.get(Category, input.category_id)
+        if category is None:
+            raise HTTPException(status_code=404, detail="Category not found")
+        expense.category_id = input.category_id
+    else:
+        inferred_input = InsertExpenseInput(
+            amount=cast(float, expense.amount),
+            category_id=None,
+            description=(
+                input.description
+                if input.description is not None
+                else cast(str | None, expense.description)
+            ),
+            date=cast(datetime, expense.date),
+        )
+        expense.category_id = _resolve_category_id(db, inferred_input)
+
+    db.commit()
+    db.refresh(expense)
+    return _expense_to_output(expense)

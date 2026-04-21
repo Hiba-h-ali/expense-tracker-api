@@ -12,6 +12,15 @@ class InsertExpenseInput(BaseModel):
     date: datetime  # When the expense occurred (client-supplied)
 
 
+class UpdateExpenseInput(BaseModel):
+    """JSON body for updating an expense; omitted fields are left unchanged."""
+
+    amount: float | None = None
+    category_id: int | None = None
+    description: str | None = None
+    date: datetime | None = None
+
+
 class ExpenseOutput(BaseModel):
     """JSON shape for one expense returned from GET or POST — includes server-generated fields."""
 
