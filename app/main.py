@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 
 from app.agent_client import CESClient
 from app.auth.dependencies import get_current_user
+from app.database.base import Base
+from app.database.connection import engine
 from app.database.connection import get_db
 import app.models.category  # noqa: F401
 import app.models.expense  # noqa: F401
@@ -28,6 +30,8 @@ ces_client: CESClient | None = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global ces_client
+    # Safety net: ensure tables exist if migration step was skipped on deploy.
+    Base.metadata.create_all(bind=engine)
     try:
         ces_client = CESClient(CESConfig.from_env())
     except ValueError:
