@@ -1,0 +1,85 @@
+openapi: 3.0.3
+info:
+  title: Expense Tracker Auth Tools
+  version: "1.0.0"
+  description: OpenAPI operations for login and token refresh.
+
+servers:
+  - url: "{baseUrl}"
+    variables:
+      baseUrl:
+        default: https://localhost:8000
+
+paths:
+  /auth/login:
+    post:
+      operationId: auth_login
+      summary: auth_login
+      description: Sign in with email and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Token pair issued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenPair"
+  /auth/refresh:
+    post:
+      operationId: auth_refresh
+      summary: auth_refresh
+      description: Exchange a refresh token for a new token pair.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshInput"
+      responses:
+        "200":
+          description: New token pair issued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenPair"
+
+components:
+  schemas:
+    LoginInput:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          example: user@example.com
+        password:
+          type: string
+          example: password123
+    RefreshInput:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+    TokenPair:
+      type: object
+      required:
+        - access_token
+        - refresh_token
+        - token_type
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          example: bearer

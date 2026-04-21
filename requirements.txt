@@ -7,6 +7,8 @@ SQLAlchemy>=2.0.0,<3
 pydantic>=2.0.0,<3
 # Postgres on Railway (DATABASE_URL); unused when using SQLite locally
 psycopg[binary]>=3.2.0,<4
+PyJWT>=2.8.0,<3
+alembic>=1.13.0,<2
 
 # --- Google Agent / CX-style client (app/agent_client.py) ---
 google-cloud-ces>=0.4.0

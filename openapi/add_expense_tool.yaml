@@ -1,0 +1,108 @@
+openapi: 3.0.3
+info:
+  title: Expense Tracker — add_expense
+  version: "1.0.0"
+  description: >
+    OpenAPI tool definition for agents: invoke POST /expenses to persist an expense.
+    Point your tool “server” / base URL at the deployed API root (e.g. https://your-app.up.railway.app).
+
+servers:
+  - url: "{baseUrl}"
+    variables:
+      baseUrl:
+        default: https://web-production-c1ba8.up.railway.app
+        description: API origin with no path suffix (scheme + host + optional port).
+
+paths:
+  /expenses:
+    post:
+      operationId: add_expense
+      summary: add_expense
+      description: to add an expense
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InsertExpenseInput"
+      responses:
+        "200":
+          description: Expense created and returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseOutput"
+        "404":
+          description: Category not found when category_id is supplied.
+        "401":
+          description: Missing or invalid bearer token.
+        "422":
+          description: Request body failed validation.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    InsertExpenseInput:
+      type: object
+      required:
+        - amount
+        - date
+      properties:
+        amount:
+          type: number
+          format: double
+          description: Monetary amount of the expense.
+          example: 24.99
+        category_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: Optional category id; omit or null to let the service infer from description.
+        description:
+          type: string
+          nullable: true
+          description: Free-text details (e.g. merchant or memo).
+          example: Coffee with team
+        date:
+          type: string
+          format: date-time
+          description: When the expense occurred (ISO-8601).
+          example: "2026-04-19T14:30:00Z"
+
+    ExpenseOutput:
+      type: object
+      required:
+        - id
+        - user_id
+        - category_id
+        - amount
+        - date
+        - created_at
+      properties:
+        id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+        category_id:
+          type: integer
+          format: int64
+        amount:
+          type: number
+          format: double
+        description:
+          type: string
+          nullable: true
+        date:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time

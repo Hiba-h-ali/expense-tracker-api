@@ -1,5 +1,3 @@
-import hashlib  # Provides PBKDF2-based key derivation for password hashing
-import secrets  # Cryptographically strong random salt generation
 from typing import cast  # Tells the type checker ORM instance attributes are plain values
 
 from fastapi import HTTPException  # Raised to return HTTP error responses (409 Conflict)
@@ -7,20 +5,9 @@ from sqlalchemy import select  # SQLAlchemy 2 style SELECT for listing users
 from sqlalchemy.exc import IntegrityError  # Raised when email UNIQUE is violated on INSERT
 from sqlalchemy.orm import Session  # Database session passed in from FastAPI Depends(get_db)
 
+from app.auth.security import hash_password
 from app.models.user import User  # SQLAlchemy ORM model mapped to the users table
 from app.schemas.user import CreateUserInput, UserOutput  # Pydantic request/response shapes
-
-
-def _hash_password(password: str) -> str:
-    """Turn a plain password into a stored hash (never store plaintext passwords)."""
-    salt = secrets.token_hex(16)  # Random 16-byte salt, hex-encoded, unique per user/password change
-    key = hashlib.pbkdf2_hmac(
-        "sha256",  # HMAC-SHA256 as the PRF inside PBKDF2
-        password.encode("utf-8"),  # Normalise password to bytes
-        salt.encode("ascii"),  # Salt must be bytes for pbkdf2_hmac
-        100_000,  # Iteration count; slows brute-force attempts
-    ).hex()  # Store derived key as readable hex string
-    return f"{salt}:{key}"  # Persist salt with hash so we can verify later without a separate salt column
 
 
 def _user_to_output(user: User) -> UserOutput:
@@ -37,7 +24,7 @@ def create_user(db: Session, input: CreateUserInput) -> UserOutput:
     user = User(
         username=input.username.strip(),  # Remove accidental leading/trailing whitespace
         email=input.email.strip().lower(),  # Normalise email for uniqueness comparisons
-        password_hash=_hash_password(input.password),  # Store only the hash, not the raw password
+        password_hash=hash_password(input.password),  # Store only the hash, not the raw password
     )
     db.add(user)  # Stage the new row in the session (not yet written to SQLite)
     try:

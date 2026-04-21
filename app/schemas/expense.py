@@ -6,10 +6,9 @@ from pydantic import BaseModel  # Validates and documents expense JSON payloads
 class InsertExpenseInput(BaseModel):
     """JSON body for POST /expenses — category_id is optional and can be auto-inferred."""
 
-    user_id: int  # Which user owns this expense (until replaced by auth-derived user id)
     amount: float  # Monetary amount (float; use Decimal later if you need exact currency math)
     category_id: int | None = None  # Optional FK to categories.id; resolved by AI when omitted
-    description: str  # Free-text details
+    description: str | None = None # Free-text details
     date: datetime  # When the expense occurred (client-supplied)
 
 

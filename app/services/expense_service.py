@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session  # DB session from get_db dependency
 from app.services import ai_service
 from app.models.category import Category  # Looked up to ensure category_id is valid
 from app.models.expense import Expense  # ORM model for expenses table
-from app.models.user import User  # Looked up to ensure FK user_id is valid before insert
 from app.schemas.expense import InsertExpenseInput, ExpenseOutput  # API input/output models
 
 
@@ -74,16 +73,12 @@ def _resolve_category_id(db: Session, input: InsertExpenseInput) -> int:
     return _get_or_create_uncategorized_category_id(db)
 
 
-def insert_expense(db: Session, input: InsertExpenseInput) -> ExpenseOutput:
-    """Create one expense row linked to input.user_id."""
-    user = db.get(User, input.user_id)  # Primary-key lookup; None if user does not exist
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")  # Avoid FK error / vague 500
-
+def insert_expense(db: Session, input: InsertExpenseInput, user_id: int) -> ExpenseOutput:
+    """Create one expense row for the authenticated user."""
     resolved_category_id = _resolve_category_id(db, input)
 
     expense = Expense(
-        user_id=input.user_id,  # Required FK to users.id
+        user_id=user_id,  # Authenticated user FK
         category_id=resolved_category_id,  # Explicit or AI-resolved category FK
         amount=input.amount,
         description=input.description,

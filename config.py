@@ -45,3 +45,23 @@ class CESConfig:
             credentials_file=credentials_file,
             credentials_json=credentials_json,
         )
+
+
+@dataclass
+class AuthConfig:
+    jwt_secret: str
+    jwt_algorithm: str = "HS256"
+    access_token_minutes: int = 30
+    refresh_token_days: int = 14
+
+    @classmethod
+    def from_env(cls) -> "AuthConfig":
+        return cls(
+            jwt_secret=os.getenv(
+                "JWT_SECRET",
+                "dev-insecure-change-me-at-least-32-bytes",
+            ),
+            jwt_algorithm=os.getenv("JWT_ALGORITHM", "HS256"),
+            access_token_minutes=int(os.getenv("ACCESS_TOKEN_MINUTES", "30")),
+            refresh_token_days=int(os.getenv("REFRESH_TOKEN_DAYS", "14")),
+        )
