@@ -334,6 +334,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     descriptionController.dispose();
   }
 
+  Future<void> _confirmDeleteExpense(Map<String, dynamic> item) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete expense?'),
+        content: Text(
+          'This will permanently delete the expense of \$${item['amount']}.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete != true) return;
+
+    await _expenseClient.deleteExpense(item['id'] as int);
+    await _loadExpenses();
+  }
+
   Future<void> _sendChat() async {
     final text = _chatController.text.trim();
     if (text.isEmpty) return;
@@ -515,9 +542,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         ),
                                       ),
                                       isThreeLine: true,
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.edit),
-                                        onPressed: () => _showEditExpenseDialog(item),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(Icons.edit),
+                                            tooltip: 'Edit',
+                                            onPressed: () => _showEditExpenseDialog(item),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete_outline),
+                                            tooltip: 'Delete',
+                                            onPressed: () => _confirmDeleteExpense(item),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),

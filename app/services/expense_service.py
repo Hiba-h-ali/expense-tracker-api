@@ -133,3 +133,11 @@ def update_expense(
     db.commit()
     db.refresh(expense)
     return _expense_to_output(expense)
+
+
+def delete_expense(db: Session, expense_id: int, user_id: int) -> None:
+    expense = db.get(Expense, expense_id)
+    if expense is None or cast(int, expense.user_id) != user_id:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    db.delete(expense)
+    db.commit()

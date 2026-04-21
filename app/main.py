@@ -121,6 +121,15 @@ def create_category(
     return category_service.create_category(db, input)
 
 
+@app.delete("/categories/{category_id}", status_code=204)
+def delete_category(
+    category_id: int,
+    db: Session = Depends(get_db),
+) -> None:
+    category_service.delete_category(db, category_id)
+    return None
+
+
 @app.get("/expenses", response_model=list[ExpenseOutput])
 def list_expenses(
     db: Session = Depends(get_db),
@@ -146,6 +155,16 @@ def update_expense(
     current_user: User = Depends(get_current_user),
 ) -> ExpenseOutput:
     return expense_service.update_expense(db, expense_id, input, current_user.id)
+
+
+@app.delete("/expenses/{expense_id}", status_code=204)
+def delete_expense(
+    expense_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    expense_service.delete_expense(db, expense_id, current_user.id)
+    return None
 
 
 @app.post("/chat", response_model=ChatResponse)

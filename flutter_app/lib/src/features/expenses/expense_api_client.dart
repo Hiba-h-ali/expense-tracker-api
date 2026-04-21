@@ -51,4 +51,8 @@ class ExpenseApiClient {
     );
     return response.data ?? const {};
   }
+
+  Future<void> deleteExpense(int expenseId) async {
+    await _dio.delete('/expenses/$expenseId');
+  }
 }
