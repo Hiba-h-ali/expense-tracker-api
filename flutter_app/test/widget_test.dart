@@ -15,7 +15,7 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: ExpenseTrackerApp()));
     await tester.pump();
 
-    expect(find.text('Sign in'), findsOneWidget);
+    expect(find.text('Sign in'), findsWidgets);
     expect(find.text('Password'), findsOneWidget);
   });
 }

@@ -8,6 +8,7 @@ class TokenStorage {
   static const _kAccessToken = 'access_token';
   static const _kRefreshToken = 'refresh_token';
   static const _kTokenType = 'token_type';
+  static const _kChatSessionPrefix = 'chat_session_user_';
 
   final FlutterSecureStorage _storage;
 
@@ -35,5 +36,17 @@ class TokenStorage {
     await _storage.delete(key: _kAccessToken);
     await _storage.delete(key: _kRefreshToken);
     await _storage.delete(key: _kTokenType);
+  }
+
+  Future<String?> readChatSessionId(int userId) async {
+    return _storage.read(key: '$_kChatSessionPrefix$userId');
+  }
+
+  Future<void> writeChatSessionId(int userId, String sessionId) async {
+    await _storage.write(key: '$_kChatSessionPrefix$userId', value: sessionId);
+  }
+
+  Future<void> clearChatSessionId(int userId) async {
+    await _storage.delete(key: '$_kChatSessionPrefix$userId');
   }
 }

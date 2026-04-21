@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 
 import 'auth/auth_repository.dart';
 import 'auth/models.dart';
@@ -142,6 +143,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
   String _chatOutput = '';
+  String? _chatSessionId;
   List<Map<String, dynamic>> _expenses = const [];
 
   @override
@@ -150,7 +152,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final dio = ref.read(authedDioProvider);
     _expenseClient = ExpenseApiClient(dio);
     _chatClient = ChatApiClient(dio);
-    Future.microtask(_loadExpenses);
+    Future.microtask(() async {
+      await _loadExpenses();
+      await _loadChatSession();
+    });
   }
 
   @override
@@ -186,8 +191,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _sendChat() async {
     final text = _chatController.text.trim();
     if (text.isEmpty) return;
-    final response = await _chatClient.chat(text: text);
-    setState(() => _chatOutput = response.toString());
+    try {
+      final response = await _chatClient.chat(
+        text: text,
+        sessionId: _chatSessionId,
+      );
+      final responseSessionId = response['session_id']?.toString();
+      if (responseSessionId != null && responseSessionId.isNotEmpty) {
+        _chatSessionId = responseSessionId;
+        await _persistChatSession(responseSessionId);
+      }
+      final messages = (response['messages'] as List<dynamic>?)
+              ?.map((item) => item.toString())
+              .toList() ??
+          const <String>[];
+      final rendered = messages.isEmpty ? 'No response from assistant.' : messages.join('\n\n');
+      if (mounted) {
+        setState(() => _chatOutput = rendered);
+      }
+    } on DioException catch (error) {
+      final status = error.response?.statusCode;
+      final body = error.response?.data;
+      if (mounted) {
+        setState(() {
+          _chatOutput = 'Chat request failed'
+              '${status != null ? ' (HTTP $status)' : ''}'
+              ': ${body ?? error.message}';
+        });
+      }
+    }
+  }
+
+  Future<void> _loadChatSession() async {
+    final user = ref.read(authRepositoryProvider).user;
+    if (user == null) return;
+    final storage = ref.read(tokenStorageProvider);
+    final savedSessionId = await storage.readChatSessionId(user.id);
+    if (!mounted) return;
+    setState(() => _chatSessionId = savedSessionId);
+  }
+
+  Future<void> _persistChatSession(String sessionId) async {
+    final user = ref.read(authRepositoryProvider).user;
+    if (user == null) return;
+    final storage = ref.read(tokenStorageProvider);
+    await storage.writeChatSessionId(user.id, sessionId);
   }
 
   @override
